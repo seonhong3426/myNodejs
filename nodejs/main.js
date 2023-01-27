@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const url = require("url");
+const qs = require("querystring");
 
 function templateHTML(title, list, body) {
   return `
@@ -35,6 +36,7 @@ const app = http.createServer(function (request, response) {
   const _url = request.url;
   const queryData = url.parse(request.url, true).query; //url의 ?변수명=값 (QueryString)
   const pathname = url.parse(_url, true).pathname;
+  console.log(pathname);
 
   let title = queryData.id;
 
@@ -67,6 +69,46 @@ const app = http.createServer(function (request, response) {
         });
       });
     }
+  } else if (pathname === "/create") {
+    if (queryData.id === undefined) {
+      fs.readdir("./data", function (error, filelist) {
+        title = "WEB - create";
+
+        const list = templateList(filelist);
+
+        const template = templateHTML(
+          title,
+          list,
+          `<form action="https://287bbo-5500.preview.csb.app/create_process"
+                      method="post">
+                      <p><input type="text" name="title" placeholder="title"></p>
+                      <p>
+                          <textarea name="description" placeholder="description"></textarea>
+                      </p>
+                      <p>
+                          <input type="submit">
+                      </p>
+              </form>            
+              `
+        );
+        response.writeHead(200);
+        response.end(template); //응답.
+      });
+    }
+  } else if (pathname === "/create_process") {
+    let body = "";
+    request.on("data", function (data) { 
+      body = body + data;
+    });
+    request.on("end", function () {
+      const post = qs.parse(body);
+      console.log(post); //{title : a, description : b}
+      const title = post.title; 
+      const description = post.description;
+    });
+    console.log(pathname); 
+    response.writeHead(200);
+    response.end("success123"); //응답.
   } else {
     response.writeHead(404);
     response.end("Not found");
